@@ -8,16 +8,12 @@ const mongoose = require('mongoose');
 app.use(express.json());
 
 
-app.get('/', (req, res) => {
-  res.send('Welcome to United Charities backend!');
-});
-
-
-
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+app.use('/auth/', require('./routes/authRouter'));
 
 
 mongoose.connect(process.env.MONGO_URI, {
@@ -26,3 +22,5 @@ mongoose.connect(process.env.MONGO_URI, {
 })
 .then(() => console.log('MongoDB connected'))
 .catch((err) => console.log(' DB connection error:', err));
+
+

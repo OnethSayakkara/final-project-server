@@ -1,7 +1,7 @@
 const jwt = require('jsonwebtoken');
-   const Admin = require('../models/admin');
-   const Organizer = require('../models/organizer');
-   const User = require('../models/user');
+   const Admin = require('../model/Admin');
+   const Organizer = require('../model/Organizer');
+   const User = require('../model/User');
 
    // Unified login function
    const login = async (req, res) => {
