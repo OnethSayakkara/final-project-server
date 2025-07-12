@@ -3,11 +3,11 @@ const bcrypt = require('bcryptjs');
    const Organizer = require('../model/Organizer');
    const User = require('../model/User');
    const fs = require('fs').promises;
+   const cloudinary = require('../config/cloudinary');
 
 
    ///////////////////////////////////////// Create a new Admin ///////////////////////////////////////
-   const createAdmin = async (req, res) => {
-  // Check if req.body is defined
+  const createAdmin = async (req, res) => {
   if (!req.body) {
     return res.status(400).json({ message: 'Request body is missing' });
   }
@@ -16,29 +16,38 @@ const bcrypt = require('bcryptjs');
   const file = req.file;
 
   try {
+    // Validate required fields
     if (!email || !password) {
       return res.status(400).json({ message: 'Email and password are required' });
     }
 
-    let existingUser = await Admin.findOne({ email }) ||
-                      await Organizer.findOne({ email }) ||
-                      await User.findOne({ email });
+    // Check for existing user
+    const existingUser = await Admin.findOne({ email }); // Assuming only Admin model is relevant
     if (existingUser) {
       return res.status(400).json({ message: 'Email already registered' });
     }
 
     let imgUrl = '';
     if (file) {
-      const result = await cloudinary.uploader.upload(file.path, {
-        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
-        folder: 'admins'
-      });
-      imgUrl = result.secure_url;
-      await fs.unlink(file.path).catch(err => console.error('Error deleting file:', err));
+      try {
+        const result = await cloudinary.uploader.upload(file.path, {
+          upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET, // Ensure this is set in .env
+          folder: 'admins'
+        });
+        imgUrl = result.secure_url;
+      } catch (uploadError) {
+        console.error('Cloudinary upload error:', uploadError);
+        throw new Error('Failed to upload image to Cloudinary');
+      } finally {
+        // Clean up the uploaded file
+        await fs.unlink(file.path).catch(err => console.error('Error deleting file:', err));
+      }
     }
 
+    // Hash password
     const hashedPassword = await bcrypt.hash(password, 10);
 
+    // Create new admin
     const newAdmin = new Admin({
       email,
       password: hashedPassword,
@@ -57,13 +66,13 @@ const bcrypt = require('bcryptjs');
       }
     });
   } catch (error) {
+    // Ensure file is deleted on error if it exists
     if (file) {
       await fs.unlink(file.path).catch(err => console.error('Error deleting file:', err));
     }
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
 
    ///////////////////////////////////////////// Get all Admins /////////////////////////////////////////
    const getAllAdmins = async (req, res) => {
