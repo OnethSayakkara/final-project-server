@@ -6,49 +6,57 @@ const bcrypt = require('bcryptjs');
 
    ///////////////////////////////////////// Create a new Admin ///////////////////////////////////////
    const createAdmin = async (req, res) => {
-     const { email, password, img } = req.body;
+  const { email, password } = req.body;
+  const file = req.file;
 
-     try {
-       // Validate input
-       if (!email || !password) {
-         return res.status(400).json({ message: 'Email and password are required' });
-       }
+  try {
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
 
-       // Check if email already exists
-       let existingUser = await Admin.findOne({ email }) ||
-                         await Organizer.findOne({ email }) ||
-                         await User.findOne({ email });
-       if (existingUser) {
-         return res.status(400).json({ message: 'Email already registered' });
-       }
+    let existingUser = await Admin.findOne({ email }) ||
+                      await Organizer.findOne({ email }) ||
+                      await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
 
-       // Hash password
-       const hashedPassword = await bcrypt.hash(password, 10);
+    let imgUrl = '';
+    if (file) {
+      const result = await cloudinary.uploader.upload(file.path, {
+        upload_preset: process.env.CLOUDINARY_UPLOAD_PRESET,
+        folder: 'admins'
+      });
+      imgUrl = result.secure_url;
+      await fs.unlink(file.path).catch(err => console.error('Error deleting file:', err));
+    }
 
-       // Create new admin
-       const newAdmin = new Admin({
-         email,
-         password: hashedPassword,
-         img,
-         role: 'admin'
-       });
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-       // Save admin
-       await newAdmin.save();
+    const newAdmin = new Admin({
+      email,
+      password: hashedPassword,
+      Img: imgUrl,
+      role: 'admin'
+    });
 
-       res.status(201).json({
-         user: {
-           id: newAdmin._id,
-           email: newAdmin.email,
-           role: newAdmin.role,
-           img: newAdmin.img
-         }
-       });
-     } catch (error) {
-       res.status(500).json({ message: 'Server error', error: error.message });
-     }
-   };
+    await newAdmin.save();
 
+    res.status(201).json({
+      user: {
+        id: newAdmin._id,
+        email: newAdmin.email,
+        role: newAdmin.role,
+        Img: newAdmin.Img
+      }
+    });
+  } catch (error) {
+    if (file) {
+      await fs.unlink(file.path).catch(err => console.error('Error deleting file:', err));
+    }
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 
    ///////////////////////////////////////////// Get all Admins /////////////////////////////////////////
