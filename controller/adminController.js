@@ -2,10 +2,16 @@ const bcrypt = require('bcryptjs');
    const Admin = require('../model/Admin');
    const Organizer = require('../model/Organizer');
    const User = require('../model/User');
+   const fs = require('fs').promises;
 
 
    ///////////////////////////////////////// Create a new Admin ///////////////////////////////////////
    const createAdmin = async (req, res) => {
+  // Check if req.body is defined
+  if (!req.body) {
+    return res.status(400).json({ message: 'Request body is missing' });
+  }
+
   const { email, password } = req.body;
   const file = req.file;
 
@@ -36,7 +42,7 @@ const bcrypt = require('bcryptjs');
     const newAdmin = new Admin({
       email,
       password: hashedPassword,
-      Img: imgUrl,
+      img: imgUrl,
       role: 'admin'
     });
 
@@ -47,7 +53,7 @@ const bcrypt = require('bcryptjs');
         id: newAdmin._id,
         email: newAdmin.email,
         role: newAdmin.role,
-        Img: newAdmin.Img
+        img: newAdmin.img
       }
     });
   } catch (error) {

@@ -3,10 +3,11 @@ const express = require('express');
 const router = express.Router();
 const { createAdmin, getAllAdmins, getAdminById, updateAdmin, deleteAdmin } = require('../controller/adminController');
 const { protect } = require('../middleware/authMiddleware');
+const handleMulterError = require('../middleware/multer');
 
 
 
-router.post('/create-admin', protect(['admin']), createAdmin);
+router.post('/create-admin', protect(['admin']), handleMulterError,createAdmin);
 router.get('/admins', protect(['admin']), getAllAdmins);
 router.get('/admins/:id', protect(['admin']), getAdminById);
 router.put('/admins/:id', protect(['admin']), updateAdmin);
