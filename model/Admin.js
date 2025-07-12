@@ -17,8 +17,10 @@ Img: {
     required: false, 
 
 },
-
-
+role: {
+    type: String,
+    default: 'admin'
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Admin', userSchema);

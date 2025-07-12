@@ -14,6 +14,8 @@ app.listen(PORT, () => {
 });
 
 app.use('/auth/', require('./routes/authRouter'));
+app.use('/user/', require('./routes/userRouter'));
+app.use('/admin/', require('./routes/adminRouter'));
 
 
 mongoose.connect(process.env.MONGO_URI, {

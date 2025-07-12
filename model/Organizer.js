@@ -17,8 +17,10 @@ Img: {
     required: false, 
 
 },
-
-
+role: {
+    type: String,
+    default: 'organizer'
+  }
 }, { timestamps: true });
 
 module.exports = mongoose.model('Organizer', userSchema);
