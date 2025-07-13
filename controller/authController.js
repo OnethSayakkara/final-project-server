@@ -8,50 +8,52 @@ const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-    // Check all three collections
+
     let user = await Admin.findOne({ email }) ||
-              await Organizer.findOne({ email }) ||
-              await User.findOne({ email });
+               await Organizer.findOne({ email }) ||
+               await User.findOne({ email });
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
     }
 
-    // Compare hashed password
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate access token (expires in 5 hours)
+
     const accessToken = jwt.sign(
-      { 
+      {
         id: user._id,
         email: user.email,
         role: user.role
       },
-      process.env.JWT_SECRET,
-      { expiresIn: '5h' }
+      process.env.JWT_ACCESS_SECRET,
+      { expiresIn: '15m' }
     );
 
-    // Generate refresh token (expires in 7 days)
+
     const refreshToken = jwt.sign(
-      { 
+      {
         id: user._id,
-        email: user.email,
         role: user.role
       },
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: '7d' }
     );
 
-    // Store refresh token in user document
-    user.refreshToken = refreshToken;
-    await user.save();
+ 
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: false, // set to true if using https
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
 
     res.json({
       accessToken,
-      refreshToken,
       user: {
         id: user._id,
         email: user.email,
@@ -64,49 +66,26 @@ const login = async (req, res) => {
   }
 };
 
-const refreshAccessToken = async (req, res) => {
-  const { refreshToken } = req.body;
 
-  if (!refreshToken) {
-    return res.status(401).json({ message: 'Refresh token is required' });
-  }
+const refreshToken = (req, res) => {
+  const token = req.cookies.refreshToken;
+  if (!token) return res.status(401).json({ message: 'No refresh token' });
 
-  try {
-    // Verify refresh token
-    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+  jwt.verify(token, process.env.JWT_REFRESH_SECRET, (err, user) => {
+    if (err) return res.status(403).json({ message: 'Invalid refresh token' });
 
-    // Find user with matching refresh token
-    let user = await Admin.findOne({ _id: decoded.id, refreshToken }) ||
-              await Organizer.findOne({ _id: decoded.id, refreshToken }) ||
-              await User.findOne({ _id: decoded.id, refreshToken });
-
-    if (!user) {
-      return res.status(401).json({ message: 'Invalid refresh token' });
-    }
-
-    // Generate new access token
-    const accessToken = jwt.sign(
-      { 
-        id: user._id,
-        email: user.email,
+    const newAccessToken = jwt.sign(
+      {
+        id: user.id,
         role: user.role
       },
-      process.env.JWT_SECRET,
-      { expiresIn: '5h' }
+      process.env.JWT_ACCESS_SECRET,
+      { expiresIn: '15m' }
     );
 
-    res.json({
-      accessToken,
-      user: {
-        id: user._id,
-        email: user.email,
-        role: user.role,
-        img: user.Img
-      }
-    });
-  } catch (error) {
-    res.status(401).json({ message: 'Invalid or expired refresh token', error: error.message });
-  }
+    res.json({ accessToken: newAccessToken });
+  });
 };
 
-module.exports = { login, refreshAccessToken };
+
+module.exports = { login, refreshToken  };
