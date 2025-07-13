@@ -23,19 +23,35 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-    // Generate JWT
-    const token = jwt.sign(
+    // Generate access token (expires in 5 hours)
+    const accessToken = jwt.sign(
       { 
         id: user._id,
         email: user.email,
         role: user.role
       },
       process.env.JWT_SECRET,
-      { expiresIn: '1h' }
+      { expiresIn: '5h' }
     );
 
+    // Generate refresh token (expires in 7 days)
+    const refreshToken = jwt.sign(
+      { 
+        id: user._id,
+        email: user.email,
+        role: user.role
+      },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '7d' }
+    );
+
+    // Store refresh token in user document
+    user.refreshToken = refreshToken;
+    await user.save();
+
     res.json({
-      token,
+      accessToken,
+      refreshToken,
       user: {
         id: user._id,
         email: user.email,
@@ -48,4 +64,49 @@ const login = async (req, res) => {
   }
 };
 
-module.exports = { login };
+const refreshAccessToken = async (req, res) => {
+  const { refreshToken } = req.body;
+
+  if (!refreshToken) {
+    return res.status(401).json({ message: 'Refresh token is required' });
+  }
+
+  try {
+    // Verify refresh token
+    const decoded = jwt.verify(refreshToken, process.env.JWT_REFRESH_SECRET);
+
+    // Find user with matching refresh token
+    let user = await Admin.findOne({ _id: decoded.id, refreshToken }) ||
+              await Organizer.findOne({ _id: decoded.id, refreshToken }) ||
+              await User.findOne({ _id: decoded.id, refreshToken });
+
+    if (!user) {
+      return res.status(401).json({ message: 'Invalid refresh token' });
+    }
+
+    // Generate new access token
+    const accessToken = jwt.sign(
+      { 
+        id: user._id,
+        email: user.email,
+        role: user.role
+      },
+      process.env.JWT_SECRET,
+      { expiresIn: '5h' }
+    );
+
+    res.json({
+      accessToken,
+      user: {
+        id: user._id,
+        email: user.email,
+        role: user.role,
+        img: user.Img
+      }
+    });
+  } catch (error) {
+    res.status(401).json({ message: 'Invalid or expired refresh token', error: error.message });
+  }
+};
+
+module.exports = { login, refreshAccessToken };
