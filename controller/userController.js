@@ -4,55 +4,72 @@ const bcrypt = require('bcryptjs');
 
     ///////////////////////////////////////////// Register a new User ///////////////////////////////////////
    const register = async (req, res) => {
-     const { email, password, img } = req.body;
+  const { email, password, img } = req.body;
 
-     try {
-       // Validate input
-       if (!email || !password) {
-         return res.status(400).json({ message: 'Email and password are required' });
-       }
+  try {
+    // Validate input
+    if (!email || !password) {
+      return res.status(400).json({ message: 'Email and password are required' });
+    }
 
-       // Check if email already exists
-       let existingUser = await User.findOne({ email });
-       if (existingUser) {
-         return res.status(400).json({ message: 'Email already registered' });
-       }
+    // Check if email already exists
+    let existingUser = await User.findOne({ email });
+    if (existingUser) {
+      return res.status(400).json({ message: 'Email already registered' });
+    }
 
-       // Hash password
-       const hashedPassword = await bcrypt.hash(password, 10);
+    // Hash password
+    const hashedPassword = await bcrypt.hash(password, 10);
 
-       // Create new user
-       const newUser = new User({
-         email,
-         password: hashedPassword,
-         img
-       });
+    // Create new user
+    const newUser = new User({
+      email,
+      password: hashedPassword,
+      img
+    });
 
-       await newUser.save();
+    await newUser.save();
 
-       // Generate JWT
-       const token = jwt.sign(
-         { 
-           id: newUser._id,
-           email: newUser.email
-         },
-         process.env.JWT_SECRET,
-         { expiresIn: '1h' }
-       );
+    // Generate JWT tokens
+    const accessToken = jwt.sign(
+      { 
+        id: newUser._id,
+        email: newUser.email
+      },
+      process.env.JWT_ACCESS_SECRET,
+      { expiresIn: '15m' } // short lived
+    );
 
-       res.status(201).json({
-         token,
-         user: {
-           id: newUser._id,
-           email: newUser.email,
-           img: newUser.img
-         }
-       });
-     } catch (error) {
-       res.status(500).json({ message: 'Server error', error: error.message });
-     }
-   };
+    const refreshToken = jwt.sign(
+      {
+        id: newUser._id,
+        email: newUser.email
+      },
+      process.env.JWT_REFRESH_SECRET,
+      { expiresIn: '7d' } // longer lived
+    );
 
+    // Set refresh token in httpOnly cookie
+    res.cookie('refreshToken', refreshToken, {
+      httpOnly: true,
+      secure: process.env.NODE_ENV === 'production', // https only in prod
+      sameSite: 'strict',
+      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+    });
+
+    // Send response with access token and user info
+    res.status(201).json({
+      accessToken,
+      user: {
+        id: newUser._id,
+        email: newUser.email,
+        img: newUser.img
+      }
+    });
+  } catch (error) {
+    res.status(500).json({ message: 'Server error', error: error.message });
+  }
+};
 
 
     ///////////////////////////////////////////// Get all Users /////////////////////////////////////////
