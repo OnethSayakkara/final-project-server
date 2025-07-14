@@ -1,9 +1,11 @@
-const bcrypt = require('bcryptjs');
-   const jwt = require('jsonwebtoken');
-   const User = require('../model/User');
+import bcrypt from 'bcryptjs';
+import jwt from 'jsonwebtoken';
+import User from '../model/User.js';
+import Admin from '../model/Admin.js'; // Assuming Admin model is used in updateUser
+import Organizer from '../model/Organizer.js'; // Assuming Organizer model is used in updateUser
 
-    ///////////////////////////////////////////// Register a new User ///////////////////////////////////////
-   const register = async (req, res) => {
+///////////////////////////////////////////// Register a new User ///////////////////////////////////////
+const register = async (req, res) => {
   const { email, password, img } = req.body;
 
   try {
@@ -25,16 +27,16 @@ const bcrypt = require('bcryptjs');
     const newUser = new User({
       email,
       password: hashedPassword,
-      img
+      img,
     });
 
     await newUser.save();
 
     // Generate JWT tokens
     const accessToken = jwt.sign(
-      { 
+      {
         id: newUser._id,
-        email: newUser.email
+        email: newUser.email,
       },
       process.env.JWT_ACCESS_SECRET,
       { expiresIn: '15m' } // short lived
@@ -43,7 +45,7 @@ const bcrypt = require('bcryptjs');
     const refreshToken = jwt.sign(
       {
         id: newUser._id,
-        email: newUser.email
+        email: newUser.email,
       },
       process.env.JWT_REFRESH_SECRET,
       { expiresIn: '7d' } // longer lived
@@ -54,7 +56,7 @@ const bcrypt = require('bcryptjs');
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production', // https only in prod
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
     // Send response with access token and user info
@@ -63,16 +65,15 @@ const bcrypt = require('bcryptjs');
       user: {
         id: newUser._id,
         email: newUser.email,
-        img: newUser.img
-      }
+        img: newUser.img,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
 
-
-    ///////////////////////////////////////////// Get all Users /////////////////////////////////////////
+///////////////////////////////////////////// Get all Users /////////////////////////////////////////
 const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
@@ -81,7 +82,6 @@ const getAllUsers = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
 
 //////////////////////////////////////////// Get User by ID ////////////////////////////////////////
 const getUserById = async (req, res) => {
@@ -98,9 +98,7 @@ const getUserById = async (req, res) => {
   }
 };
 
-
 //////////////////////////////////////////// Update User /////////////////////////////////////
-
 const updateUser = async (req, res) => {
   const { id } = req.params;
   const { email, password, img } = req.body;
@@ -112,9 +110,9 @@ const updateUser = async (req, res) => {
     }
 
     if (email && email !== user.email) {
-      const existingUser = await User.findOne({ email }) ||
-                          await Admin.findOne({ email }) ||
-                          await Organizer.findOne({ email });
+      const existingUser = (await User.findOne({ email })) ||
+                          (await Admin.findOne({ email })) ||
+                          (await Organizer.findOne({ email }));
       if (existingUser) {
         return res.status(400).json({ message: 'Email already registered' });
       }
@@ -131,15 +129,13 @@ const updateUser = async (req, res) => {
         id: user._id,
         email: user.email,
         role: 'user',
-        img: user.img
-      }
+        img: user.img,
+      },
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
-
 
 //////////////////////////////////////////// Delete User /////////////////////////////////////
 const deleteUser = async (req, res) => {
@@ -158,5 +154,4 @@ const deleteUser = async (req, res) => {
   }
 };
 
-module.exports = { register, getAllUsers, getUserById, updateUser, deleteUser };
-
+export { register, getAllUsers, getUserById, updateUser, deleteUser };

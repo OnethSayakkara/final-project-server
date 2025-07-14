@@ -1,16 +1,14 @@
-// routes/authRouter.js
-const express = require('express');
+import express from 'express';
+import { createAdmin, getAllAdmins, getAdminById, updateAdmin, deleteAdmin } from '../controller/adminController.js';
+import { protect } from '../middleware/authMiddleware.js';
+import handleMulterError from '../middleware/multer.js';
+
 const router = express.Router();
-const { createAdmin, getAllAdmins, getAdminById, updateAdmin, deleteAdmin } = require('../controller/adminController');
-const { protect } = require('../middleware/authMiddleware');
-const handleMulterError = require('../middleware/multer');
 
-
-
-router.post('/create-admin', protect(['admin']), handleMulterError,createAdmin);
+router.post('/create-admin', protect(['admin']), handleMulterError, createAdmin);
 router.get('/admins', protect(['admin']), getAllAdmins);
 router.get('/admins/:id', protect(['admin']), getAdminById);
 router.put('/admins/:id', protect(['admin']), updateAdmin);
 router.delete('/admins/:id', protect(['admin']), deleteAdmin);
 
-module.exports = router;
+export default router;

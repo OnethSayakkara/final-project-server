@@ -1,23 +1,24 @@
-const express = require('express');
+import express from 'express';
+import { config } from 'dotenv';
+import mongoose from 'mongoose';
+import cookieParser from 'cookie-parser';
+
+config(); // Initialize dotenv to load environment variables
+
 const app = express();
 const PORT = 3000;
-require('dotenv').config();
-const mongoose = require('mongoose');
-const cookieParser = require('cookie-parser');
-
 
 app.use(express.json());
 app.use(cookieParser());
-
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
 
-app.use('/auth/', require('./routes/authRouter'));
-app.use('/user/', require('./routes/userRouter'));
-app.use('/admin/', require('./routes/adminRouter'));
-
+app.use('/auth/', (await import('./routes/authRouter.js')).default);
+app.use('/user/', (await import('./routes/userRouter.js')).default);
+app.use('/admin/', (await import('./routes/adminRouter.js')).default);
+app.use('/scamDetection/', (await import('./routes/scamCheckRoutes.js')).default);
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
@@ -25,5 +26,4 @@ mongoose.connect(process.env.MONGO_URI, {
 })
 .then(() => console.log('MongoDB connected'))
 .catch((err) => console.log(' DB connection error:', err));
-
 

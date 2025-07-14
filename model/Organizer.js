@@ -1,4 +1,4 @@
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const userSchema = new mongoose.Schema({
 
@@ -23,4 +23,4 @@ role: {
   }
 }, { timestamps: true });
 
-module.exports = mongoose.model('Organizer', userSchema);
+export default mongoose.model('Organizer', userSchema);

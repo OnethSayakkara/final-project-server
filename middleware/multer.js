@@ -1,11 +1,16 @@
-const multer = require('multer');
-const path = require('path');
+import multer from 'multer';
+import path from 'path';
+import { fileURLToPath } from 'url';
+
+// Since __dirname is not available in ES Modules, derive it
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
 const storage = multer.diskStorage({
   destination: './uploads/',
   filename: (req, file, cb) => {
     cb(null, `${file.fieldname}-${Date.now()}${path.extname(file.originalname)}`);
-  }
+  },
 });
 
 const fileFilter = (req, file, cb) => {
@@ -21,7 +26,7 @@ const fileFilter = (req, file, cb) => {
 const upload = multer({
   storage,
   limits: { fileSize: 5 * 1024 * 1024 }, // 5MB limit
-  fileFilter
+  fileFilter,
 }).single('Img');
 
 const handleMulterError = (req, res, next) => {
@@ -35,4 +40,4 @@ const handleMulterError = (req, res, next) => {
   });
 };
 
-module.exports = handleMulterError;
+export default handleMulterError;

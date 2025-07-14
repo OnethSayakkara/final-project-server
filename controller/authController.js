@@ -1,17 +1,16 @@
-const jwt = require('jsonwebtoken');
-const bcrypt = require('bcryptjs');
-const Admin = require('../model/Admin');
-const Organizer = require('../model/Organizer');
-const User = require('../model/User');
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import Admin from '../model/Admin.js';
+import Organizer from '../model/Organizer.js';
+import User from '../model/User.js';
 
 const login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
-
-    let user = await Admin.findOne({ email }) ||
-               await Organizer.findOne({ email }) ||
-               await User.findOne({ email });
+    let user = (await Admin.findOne({ email })) ||
+               (await Organizer.findOne({ email })) ||
+               (await User.findOne({ email }));
 
     if (!user) {
       return res.status(404).json({ message: 'User not found' });
@@ -22,35 +21,31 @@ const login = async (req, res) => {
       return res.status(401).json({ message: 'Invalid credentials' });
     }
 
-
     const accessToken = jwt.sign(
       {
         id: user._id,
         email: user.email,
-        role: user.role
+        role: user.role,
       },
       process.env.JWT_ACCESS_SECRET,
-      { expiresIn: '15m' }
+      { expiresIn: '15m' },
     );
-
 
     const refreshToken = jwt.sign(
       {
         id: user._id,
-        role: user.role
+        role: user.role,
       },
       process.env.JWT_REFRESH_SECRET,
-      { expiresIn: '7d' }
+      { expiresIn: '7d' },
     );
 
- 
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
-      secure: false, // set to true if using https
+      secure: process.env.NODE_ENV === 'production', // Use https in production
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000 // 7 days
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
-
 
     res.json({
       accessToken,
@@ -58,14 +53,13 @@ const login = async (req, res) => {
         id: user._id,
         email: user.email,
         role: user.role,
-        img: user.Img
-      }
+        img: user.img, // Fixed typo: 'Img' to 'img' to match schema
+      },
     });
   } catch (error) {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
-
 
 const refreshToken = (req, res) => {
   const token = req.cookies.refreshToken;
@@ -77,15 +71,14 @@ const refreshToken = (req, res) => {
     const newAccessToken = jwt.sign(
       {
         id: user.id,
-        role: user.role
+        role: user.role,
       },
       process.env.JWT_ACCESS_SECRET,
-      { expiresIn: '15m' }
+      { expiresIn: '15m' },
     );
 
     res.json({ accessToken: newAccessToken });
   });
 };
 
-
-module.exports = { login, refreshToken  };
+export { login, refreshToken };
