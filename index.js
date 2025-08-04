@@ -2,11 +2,17 @@ import express from 'express';
 import { config } from 'dotenv';
 import mongoose from 'mongoose';
 import cookieParser from 'cookie-parser';
+import cors from 'cors';
 
 config(); // Initialize dotenv to load environment variables
 
 const app = express();
 const PORT = 3000;
+
+app.use(cors({
+  origin: 'http://localhost:5173', 
+  credentials: true, 
+}));
 
 app.use(express.json());
 app.use(cookieParser());

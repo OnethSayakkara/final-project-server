@@ -5,7 +5,7 @@ import { authMiddleware } from '../middleware/authMiddleware.js';
 const router = express.Router();
 
 router.post('/registeruser', register);
-router.post('/getallusers', authMiddleware, getAllUsers);
+router.post('/getallusers', getAllUsers);
 router.post('/getuserbyid/:id', authMiddleware, getUserById);
 router.post('/updateuser/:id', authMiddleware, updateUser);
 router.post('/deleteUser/:id', authMiddleware, deleteUser);
