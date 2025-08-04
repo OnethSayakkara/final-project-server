@@ -6,7 +6,7 @@ import User from '../model/User.js';
 import cloudinary from '../config/cloudinary.js';
 
 ///////////////////////////////////////// Create a new Admin ///////////////////////////////////////
-const createAdmin = async (req, res) => {
+exports.createAdmin = async (req, res) => {
   if (!req.body) {
     return res.status(400).json({ message: 'Request body is missing' });
   }
@@ -74,7 +74,7 @@ const createAdmin = async (req, res) => {
 };
 
 /////////////////////////////////////////// Get all Admins /////////////////////////////////////////
-const getAllAdmins = async (req, res) => {
+exports.getAllAdmins = async (req, res) => {
   try {
     const admins = await Admin.find().select('-password'); // Exclude password
     res.json(admins);
@@ -84,7 +84,7 @@ const getAllAdmins = async (req, res) => {
 };
 
 /////////////////////////////////////////// Get Admin by ID ////////////////////////////////////////
-const getAdminById = async (req, res) => {
+exports.getAdminById = async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -99,7 +99,7 @@ const getAdminById = async (req, res) => {
 };
 
 //////////////////////////////////////////// Update Admin /////////////////////////////////////
-const updateAdmin = async (req, res) => {
+exports.updateAdmin = async (req, res) => {
   const { id } = req.params;
   const { email, password, img } = req.body;
 
@@ -142,7 +142,7 @@ const updateAdmin = async (req, res) => {
 };
 
 /////////////////////////////////////////////// Delete Admin /////////////////////////////////////
-const deleteAdmin = async (req, res) => {
+exports.deleteAdmin = async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -158,4 +158,3 @@ const deleteAdmin = async (req, res) => {
   }
 };
 
-export { createAdmin, getAllAdmins, getAdminById, updateAdmin, deleteAdmin };

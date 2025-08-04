@@ -2,7 +2,7 @@ import axios from 'axios';
 import dotenv from 'dotenv';
 dotenv.config();
 
-export const scamCheck = async (req, res) => {
+exports.scamCheck = async (req, res) => {
   const { title, description } = req.body;
 
   if (!title || !description) {

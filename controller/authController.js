@@ -6,7 +6,7 @@ import User from '../model/User.js';
 import crypto from 'crypto';
 import nodemailer from 'nodemailer';
 
-const login = async (req, res) => {
+exports.login = async (req, res) => {
   const { email, password } = req.body;
 
   try {
@@ -85,7 +85,7 @@ const refreshToken = (req, res) => {
 
 
 
- const forgotPassword = async (req, res) => {
+exports.forgotPassword = async (req, res) => {
   const { email } = req.body;
 
   try {
@@ -148,7 +148,7 @@ await transporter.sendMail({
 
 
 
- const resetPassword = async (req, res) => {
+exports.resetPassword = async (req, res) => {
   const { userId, token } = req.params;
   const { password } = req.body;
 
@@ -175,4 +175,3 @@ await transporter.sendMail({
   }
 };
 
-export { login, refreshToken, forgotPassword, resetPassword };

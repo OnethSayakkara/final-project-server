@@ -1,7 +1,7 @@
 import Event from '../model/Event.js';
 
 // Create a new event
-const createEvent = async (req, res) => {
+exports.createEvent = async (req, res) => {
   try {
     const eventData = req.body;
 
@@ -16,6 +16,3 @@ const createEvent = async (req, res) => {
   }
 };
 
-module.exports = {
-  createEvent
-};
