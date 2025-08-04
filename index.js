@@ -25,6 +25,7 @@ app.use('/auth/', (await import('./routes/authRouter.js')).default);
 app.use('/user/', (await import('./routes/userRouter.js')).default);
 app.use('/admin/', (await import('./routes/adminRouter.js')).default);
 app.use('/scamDetection/', (await import('./routes/scamCheckRoutes.js')).default);
+app.use('/event/', (await import('./routes/eventRouter.js')).default);
 
 mongoose.connect(process.env.MONGO_URI, {
   useNewUrlParser: true,
