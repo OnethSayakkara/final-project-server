@@ -5,7 +5,7 @@ import Admin from '../model/Admin.js'; // Assuming Admin model is used in update
 import Organizer from '../model/Organizer.js'; // Assuming Organizer model is used in updateUser
 
 ///////////////////////////////////////////// Register a new User ///////////////////////////////////////
-exports.register = async (req, res) => {
+const register = async (req, res) => {
   const { email, password, img } = req.body;
 
   try {
@@ -74,7 +74,7 @@ exports.register = async (req, res) => {
 };
 
 ///////////////////////////////////////////// Get all Users /////////////////////////////////////////
-exports.getAllUsers = async (req, res) => {
+const getAllUsers = async (req, res) => {
   try {
     const users = await User.find().select('-password');
     res.json(users);
@@ -84,7 +84,7 @@ exports.getAllUsers = async (req, res) => {
 };
 
 //////////////////////////////////////////// Get User by ID ////////////////////////////////////////
-exports.getUserById = async (req, res) => {
+const getUserById = async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -99,7 +99,7 @@ exports.getUserById = async (req, res) => {
 };
 
 //////////////////////////////////////////// Update User /////////////////////////////////////
-exports.updateUser = async (req, res) => {
+const updateUser = async (req, res) => {
   const { id } = req.params;
   const { email, password, img } = req.body;
 
@@ -138,7 +138,7 @@ exports.updateUser = async (req, res) => {
 };
 
 //////////////////////////////////////////// Delete User /////////////////////////////////////
-exports.deleteUser = async (req, res) => {
+const deleteUser = async (req, res) => {
   const { id } = req.params;
 
   try {
@@ -154,3 +154,4 @@ exports.deleteUser = async (req, res) => {
   }
 };
 
+export { register, getAllUsers, getUserById, updateUser, deleteUser };

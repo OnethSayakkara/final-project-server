@@ -1,9 +1,11 @@
 import express from 'express';
-import { createEvent } from '../controller/eventcontroller.js';
+import eventController from '../controller/eventcontroller.js';
+import handleMulterError from '../middleware/multer.js';
 
 const router = express.Router();
-// POST /api/events - Create a new event
-router.post('/create-event', createEvent);
 
+router.post('/registerEvent', handleMulterError, eventController.createEvent);
+router.get('/allEvents', eventController.getAllEvents);
+router.get('/:id', eventController.getEventById);
 
 export default router;

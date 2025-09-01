@@ -1,5 +1,4 @@
-
-const mongoose = require('mongoose');
+import mongoose from 'mongoose';
 
 const eventSchema = new mongoose.Schema({
   title: {
@@ -22,6 +21,21 @@ const eventSchema = new mongoose.Schema({
       return this.type === 'fundraising' || this.type === 'mixed';
     }
   },
+  raisedAmount: {
+    type: Number,
+    default: 0,
+    min: 0
+  },
+  category: {
+    type: String,
+    required: true,
+    trim: true
+  },
+  img: {
+    type: String, // Store image URL or path
+    required: false,
+    default: null
+  },
   eventDate: {
     type: Date,
     required: true
@@ -35,7 +49,7 @@ const eventSchema = new mongoose.Schema({
     ref: 'Organizer',
     required: true
   },
-   JoinedUsers: [{
+  JoinedUsers: [{
     type: mongoose.Schema.Types.ObjectId,
     ref: 'User'
   }],
@@ -48,10 +62,10 @@ const eventSchema = new mongoose.Schema({
     type: String,
     required: false,
   },
-    predictionValue: {
-        type: Number,
-        required: false
-    },
+  predictionValue: {
+    type: Number,
+    required: false
+  },
   rejectionReason: {
     type: String,
     default: null
@@ -60,4 +74,4 @@ const eventSchema = new mongoose.Schema({
   timestamps: true
 });
 
-module.exports = mongoose.model('Event', eventSchema);
+export default mongoose.model('Event', eventSchema);

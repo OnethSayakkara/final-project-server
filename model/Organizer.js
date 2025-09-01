@@ -1,6 +1,6 @@
 import mongoose from 'mongoose';
 
-const userSchema = new mongoose.Schema({
+const organizerSchema = new mongoose.Schema({
 
   email: { 
     type: String,
@@ -23,4 +23,4 @@ role: {
   }
 }, { timestamps: true });
 
-export default mongoose.model('Organizer', userSchema);
+export default mongoose.model('Organizer', organizerSchema);
