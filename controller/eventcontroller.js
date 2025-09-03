@@ -1,11 +1,11 @@
-// Fixed createEvent controller
+
 import Event from '../model/Event.js';
 import cloudinary from '../config/cloudinary.js';
 import fs from 'fs';
 
 export const createEvent = async (req, res) => {
   try {
-    const { title, description, type, fundingGoal, eventDate, location, organizer, category } = req.body;
+    const { title, description, type, fundingGoal, eventDate, location, organizer, category, greetingSentence } = req.body;
     
     // Validate required fields
     if (!title || !description || !type || !eventDate || !location || !organizer || !category) {
@@ -85,6 +85,7 @@ export const createEvent = async (req, res) => {
       raisedAmount: 0,
       img: imageUrl,
       documents: documentUrls,
+      greetingSentence,
     };
 
     const event = new Event(eventData);

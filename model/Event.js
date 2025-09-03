@@ -76,6 +76,11 @@ const eventSchema = new mongoose.Schema({
     type: String,
     default: null
   },
+  greetingSentence:{
+      type: String,
+      required: false
+
+  },
 documents: [{
   type: String,
   validate: {

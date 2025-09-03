@@ -35,6 +35,7 @@ app.use('/admin/', (await import('./routes/adminRouter.js')).default);
 app.use('/organizer/', (await import('./routes/organizerRouter.js')).default);
 app.use('/scamDetection/', (await import('./routes/scamCheckRoutes.js')).default);
 app.use('/event/', (await import('./routes/eventRouter.js')).default);
+app.use('/donation/', (await import('./routes/donationRoutes.js')).default);
 
 // Payment (except webhook handled above)
 app.use('/payment/', paymentRouter);

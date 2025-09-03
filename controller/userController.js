@@ -1,17 +1,18 @@
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
 import User from '../model/User.js';
-import Admin from '../model/Admin.js'; // Assuming Admin model is used in updateUser
-import Organizer from '../model/Organizer.js'; // Assuming Organizer model is used in updateUser
+import cloudinary from 'cloudinary';
+import handleMulterError from '../middleware/multer.js';
+
 
 ///////////////////////////////////////////// Register a new User ///////////////////////////////////////
 const register = async (req, res) => {
-  const { email, password, img } = req.body;
+  const { firstName, lastName, phoneNumber, email, password, img } = req.body;
 
   try {
     // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    if (!firstName || !lastName || !email || !password) {
+      return res.status(400).json({ message: 'First name, last name, email and password are required' });
     }
 
     // Check if email already exists
@@ -25,6 +26,9 @@ const register = async (req, res) => {
 
     // Create new user
     const newUser = new User({
+      firstName,
+      lastName,
+      phoneNumber, // optional
       email,
       password: hashedPassword,
       img,
@@ -64,6 +68,9 @@ const register = async (req, res) => {
       accessToken,
       user: {
         id: newUser._id,
+        firstName: newUser.firstName,
+        lastName: newUser.lastName,
+        phoneNumber: newUser.phoneNumber,
         email: newUser.email,
         img: newUser.img,
       },
@@ -72,6 +79,7 @@ const register = async (req, res) => {
     res.status(500).json({ message: 'Server error', error: error.message });
   }
 };
+
 
 ///////////////////////////////////////////// Get all Users /////////////////////////////////////////
 const getAllUsers = async (req, res) => {
@@ -99,28 +107,41 @@ const getUserById = async (req, res) => {
 };
 
 //////////////////////////////////////////// Update User /////////////////////////////////////
+cloudinary.v2.config({
+  cloud_name: process.env.CLOUDINARY_CLOUD_NAME,
+  api_key: process.env.CLOUDINARY_API_KEY,
+  api_secret: process.env.CLOUDINARY_API_SECRET,
+});
+
 const updateUser = async (req, res) => {
-  const { id } = req.params;
-  const { email, password, img } = req.body;
-
   try {
+    // Handle multer errors first
+    await new Promise((resolve, reject) => {
+      handleMulterError(req, res, (err) => (err ? reject(err) : resolve()));
+    });
+
+    const { id } = req.params;
+    const { firstName, lastName, phoneNumber, password } = req.body;
+    const file = req.files?.Img?.[0]; // multer field name is 'Img'
+
     const user = await User.findById(id);
-    if (!user) {
-      return res.status(404).json({ message: 'User not found' });
-    }
+    if (!user) return res.status(404).json({ message: 'User not found' });
 
-    if (email && email !== user.email) {
-      const existingUser = (await User.findOne({ email })) ||
-                          (await Admin.findOne({ email })) ||
-                          (await Organizer.findOne({ email }));
-      if (existingUser) {
-        return res.status(400).json({ message: 'Email already registered' });
-      }
-    }
-
-    if (email) user.email = email;
+    // Update optional fields
+    if (firstName) user.firstName = firstName;
+    if (lastName) user.lastName = lastName;
+    if (phoneNumber) user.phoneNumber = phoneNumber;
     if (password) user.password = await bcrypt.hash(password, 10);
-    if (img) user.img = img;
+
+    // Handle image upload if a file is provided
+    if (file) {
+      const result = await cloudinary.v2.uploader.upload(file.path, {
+        folder: 'users/',
+        use_filename: true,
+        unique_filename: false,
+      });
+      user.img = result.secure_url; // save Cloudinary URL in MongoDB
+    }
 
     await user.save();
 
@@ -128,8 +149,11 @@ const updateUser = async (req, res) => {
       user: {
         id: user._id,
         email: user.email,
-        role: 'user',
+        firstName: user.firstName,
+        lastName: user.lastName,
+        phoneNumber: user.phoneNumber,
         img: user.img,
+        role: user.role,
       },
     });
   } catch (error) {
