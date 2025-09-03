@@ -21,6 +21,11 @@ const eventSchema = new mongoose.Schema({
       return this.type === 'fundraising' || this.type === 'mixed';
     }
   },
+  programmeStatus: {
+    type: String,
+    enum: ['Active', 'Expired', 'Completed'],
+    default: 'Active'
+  },
   raisedAmount: {
     type: Number,
     default: 0,
@@ -28,6 +33,7 @@ const eventSchema = new mongoose.Schema({
   },
   category: {
     type: String,
+    enum: ['Healthcare', 'Community', 'Animal Welfare', 'Education', 'Emergency', 'Environment', 'Cancer', 'sports'],
     required: true,
     trim: true
   },
@@ -69,7 +75,18 @@ const eventSchema = new mongoose.Schema({
   rejectionReason: {
     type: String,
     default: null
+  },
+documents: [{
+  type: String,
+  validate: {
+    validator: function(v) {
+      return /\.(pdf|png|jpeg|jpg)$/i.test(v);
+    },
+    message: props => `${props.value} is not a valid file!`
   }
+}]
+
+
 }, {
   timestamps: true
 });
