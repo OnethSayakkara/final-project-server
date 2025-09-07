@@ -1,7 +1,7 @@
-import Organizer from '../model/Organizer.js'; // Adjust path
+import Organizer from '../model/Organizer.js';
 import bcrypt from 'bcryptjs';
 import jwt from 'jsonwebtoken';
-import handleMulterError from '../middleware/multer.js'; 
+import handleMulterError from '../middleware/multer.js';
 
 const registerOrganizer = async (req, res) => {
   try {
@@ -13,15 +13,26 @@ const registerOrganizer = async (req, res) => {
       });
     });
 
-    const { email, password, category } = req.body; // Note: 'category' was a typo in your request; assuming it's not needed for organizers
+    // Destructure all required fields from the request body
+    const {
+      firstName,
+      lastName,
+      phoneNumber,
+      email,
+      password,
+      bank,
+      accountName,
+      accountNumber,
+      Branch
+    } = req.body;
 
-    // Validate input
-    if (!email || !password) {
-      return res.status(400).json({ message: 'Email and password are required' });
+    // Validate required fields
+    if (!firstName || !lastName || !email || !password || !bank || !accountName || !accountNumber || !Branch) {
+      return res.status(400).json({ message: 'All required fields must be provided' });
     }
 
     // Check if email already exists
-    let existingOrganizer = await Organizer.findOne({ email });
+    const existingOrganizer = await Organizer.findOne({ email });
     if (existingOrganizer) {
       return res.status(400).json({ message: 'Email already registered' });
     }
@@ -31,13 +42,20 @@ const registerOrganizer = async (req, res) => {
 
     // Construct organizer data
     const organizerData = {
+      firstName,
+      lastName,
+      phoneNumber,
       email,
       password: hashedPassword,
-      img: req.file ? `/uploads/${req.file.filename}` : null, // Store image path if uploaded
-      role: 'organizer', // Default from schema
+      img: req.files?.Img ? `/uploads/${req.files.Img[0].filename}` : null, // Multer saves file under Img field
+      role: 'organizer',
+      bank,
+      accountName,
+      accountNumber,
+      Branch
     };
 
-    // Create new organizer
+    // Save new organizer
     const newOrganizer = new Organizer(organizerData);
     await newOrganizer.save();
 
@@ -62,22 +80,29 @@ const registerOrganizer = async (req, res) => {
       { expiresIn: '7d' }
     );
 
-    // Set refresh token in httpOnly cookie
+    // Set refresh token as httpOnly cookie
     res.cookie('refreshToken', refreshToken, {
       httpOnly: true,
       secure: process.env.NODE_ENV === 'production',
       sameSite: 'strict',
-      maxAge: 7 * 24 * 60 * 60 * 1000,
+      maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
     });
 
-    // Send response with access token and organizer info
+    // Send response
     res.status(201).json({
       accessToken,
       user: {
         id: newOrganizer._id,
+        firstName: newOrganizer.firstName,
+        lastName: newOrganizer.lastName,
+        phoneNumber: newOrganizer.phoneNumber,
         email: newOrganizer.email,
         img: newOrganizer.img,
         role: newOrganizer.role,
+        bank: newOrganizer.bank,
+        accountName: newOrganizer.accountName,
+        accountNumber: newOrganizer.accountNumber,
+        Branch: newOrganizer.Branch
       },
     });
   } catch (error) {

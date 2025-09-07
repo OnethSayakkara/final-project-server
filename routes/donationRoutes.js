@@ -7,6 +7,7 @@ const router = express.Router();
 
 router.get('/summary/:userId', DonationdetailsController.getUserDonationSummary);
 router.get("/donationhistory/:userId", DonationdetailsController.getDonationHistoryByUser);
+router.get("/progress/organizer/:organizerId", DonationdetailsController.getOrganizerDonationProgress);
 
 // Export router
 export default router;

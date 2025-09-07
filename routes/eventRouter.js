@@ -7,5 +7,7 @@ const router = express.Router();
 router.post('/registerEvent', handleMulterError, eventController.createEvent);
 router.get('/allEvents', eventController.getAllEvents);
 router.get('/geteventbyid/:id', eventController.getEventById);
+router.get("/geteventsbyorganizer/:organizerId", eventController.getEventsByOrganizer);
+router.get("/volunteer-users/:organizerId", eventController.getVolunteerEventsWithUsers);
 
 export default router;

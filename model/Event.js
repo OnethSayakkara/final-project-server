@@ -41,10 +41,32 @@ const eventSchema = new mongoose.Schema({
     type: String, // Store image URL or path
     required: false,
     default: null
-  },
+  }, 
   eventDate: {
     type: Date,
-    required: true
+    required: function () {
+      return this.type === "volunteer" || this.type === "mixed";
+    }
+  },
+  startTime: {
+    type: String, // e.g. "10:00 AM" or "14:30"
+    required: function () {
+      return this.type === "volunteer" || this.type === "mixed";
+    }
+  },
+  endTime: {
+    type: String,
+    required: function () {
+      return this.type === "volunteer" || this.type === "mixed";
+    }
+  },
+
+  eventDate: {
+    type: Date,
+    required: true,
+    required: function () {
+      return this.type === "volunteer" || this.type === "mixed";
+    }
   },
   location: {
     type: String,

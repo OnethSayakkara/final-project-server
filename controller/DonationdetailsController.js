@@ -1,5 +1,7 @@
 import mongoose from "mongoose";
 import Donation from "../model/Donation.js";
+import BankSlipDonation from "../model/BankSlipDonation.js";
+import Event from "../model/Event.js";
 
 export const getUserDonationSummary = async (req, res) => {
   try {
@@ -90,4 +92,118 @@ export const getDonationHistoryByUser = async (req, res) => {
   }
 };
 
-export default { getUserDonationSummary, getDonationHistoryByUser };
+
+export const getOrganizerDonationProgress = async (req, res) => {
+  try {
+    const { organizerId } = req.params;
+
+    // 1. Get only FUNDRAISING events owned by this organizer
+    const events = await Event.find({
+      organizer: organizerId,
+      type: "fundraising"
+    }).select("_id title createdAt");
+
+    if (!events.length) {
+      return res.status(404).json({ message: "No fundraising events found for this organizer" });
+    }
+
+    const eventIds = events.map(e => e._id);
+
+    // 2. Donations aggregation (group by month)
+    const donationAgg = await Donation.aggregate([
+      { $match: { event: { $in: eventIds } } },
+      {
+        $group: {
+          _id: {
+            event: "$event",
+            month: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }
+          },
+          donationTotal: { $sum: "$amountMinor" }  // ✅ direct sum in LKR
+        }
+      }
+    ]);
+
+    // 3. BankSlipDonation aggregation (group by month)
+    const bankSlipAgg = await BankSlipDonation.aggregate([
+      { $match: { eventId: { $in: eventIds }, DonationAdminStatus: "Approved" } },
+      {
+        $group: {
+          _id: {
+            event: "$eventId",
+            month: { $dateToString: { format: "%Y-%m", date: "$createdAt" } }
+          },
+          bankSlipTotal: { $sum: "$amount" } // ✅ already in LKR
+        }
+      }
+    ]);
+
+    // 4. Merge results
+    const merged = {};
+
+    donationAgg.forEach(d => {
+      const key = `${d._id.event}_${d._id.month}`;
+      merged[key] = {
+        event: d._id.event.toString(),
+        month: d._id.month,
+        donationTotal: d.donationTotal,
+        bankSlipTotal: 0,
+      };
+    });
+
+    bankSlipAgg.forEach(b => {
+      const key = `${b._id.event}_${b._id.month}`;
+      if (!merged[key]) {
+        merged[key] = {
+          event: b._id.event.toString(),
+          month: b._id.month,
+          donationTotal: 0,
+          bankSlipTotal: b.bankSlipTotal,
+        };
+      } else {
+        merged[key].bankSlipTotal = b.bankSlipTotal;
+      }
+    });
+
+    // 5. Attach event names + overall summary + start month
+    const response = {};
+
+    for (let e of events) {
+      const monthlyTotals = Object.values(merged)
+        .filter(r => r.event === e._id.toString())
+        .map(r => ({
+          month: r.month, // format "2025-09"
+          donationTotal: r.donationTotal,
+          bankSlipTotal: r.bankSlipTotal,
+          grandTotal: r.donationTotal + r.bankSlipTotal,
+        }))
+        .sort((a, b) => a.month.localeCompare(b.month));
+
+      const totalDonation = monthlyTotals.reduce((a, b) => a + b.donationTotal, 0);
+      const totalBankSlip = monthlyTotals.reduce((a, b) => a + b.bankSlipTotal, 0);
+
+      // Event start month from createdAt
+      const createdAt = new Date(e.createdAt);
+      const startMonth = createdAt.toLocaleString("en-US", { month: "long", year: "numeric" });
+
+      response[e.title] = {
+        startMonth,
+        monthlyTotals,
+        overallSummary: {
+          totalDonation,
+          totalBankSlip,
+          grandTotal: totalDonation + totalBankSlip,
+        }
+      };
+    }
+
+    res.json(response);
+
+  } catch (err) {
+    console.error("Error:", err);
+    res.status(500).json({ message: "Server error", error: err.message });
+  }
+};
+
+
+
+export default { getUserDonationSummary, getDonationHistoryByUser, getOrganizerDonationProgress };
