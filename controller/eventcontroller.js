@@ -204,4 +204,20 @@ export const getVolunteerEventsWithUsers = async (req, res) => {
   }
 };
 
-export default { createEvent, getAllEvents, getEventById, getEventsByOrganizer, getVolunteerEventsWithUsers };
+export const getTrendingEvents = async (req, res) => {
+  try {
+    const trendingEvents = await Event.aggregate([
+      //{ $match: { status: "approved" } }, // Optional: Approved events විතර
+      { $addFields: { totalJoined: { $size: "$JoinedUsers" } } },
+      { $sort: { totalJoined: -1 } },
+      { $limit: 10 }
+    ]);
+
+    res.status(200).json(trendingEvents);
+  } catch (error) {
+    console.error("Error fetching trending events:", error);
+    res.status(500).json({ message: "Server error" });
+  }
+};
+
+export default { createEvent, getAllEvents, getEventById, getEventsByOrganizer, getVolunteerEventsWithUsers, getTrendingEvents };

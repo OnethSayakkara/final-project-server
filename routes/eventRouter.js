@@ -9,5 +9,6 @@ router.get('/allEvents', eventController.getAllEvents);
 router.get('/geteventbyid/:id', eventController.getEventById);
 router.get("/geteventsbyorganizer/:organizerId", eventController.getEventsByOrganizer);
 router.get("/volunteer-users/:organizerId", eventController.getVolunteerEventsWithUsers);
+router.get("/trending", eventController.getTrendingEvents);
 
 export default router;
